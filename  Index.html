@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architect Intelligence — Masterclass Registration Portal</title>
+    <!-- Tailwind CSS for sleek utility styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Premium Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #02040a;
+            overflow-x: hidden;
+        }
+        .header-font {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        /* Tech scanline effect */
+        .scanline {
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.15) 50%,
+                rgba(0, 0, 0, 0.15)
+            );
+            background-size: 100% 4px;
+        }
+        /* Mouse interactive glow card container */
+        .cyber-card {
+            background: rgba(10, 15, 30, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(59, 130, 246, 0.15);
+            position: relative;
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        /* Pulsing tech-glow borders */
+        .glow-active {
+            box-shadow: 0 0 35px rgba(59, 130, 246, 0.2);
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        /* Smooth fade transitions */
+        .fade-in {
+            animation: cyberFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes cyberFade {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Laser scanner animation line */
+        .laser-beam {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+            position: absolute;
+            animation: scanLaser 4s linear infinite;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        @keyframes scanLaser {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+        /* Interactive background canvas styling */
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .ui-element {
+            position: relative;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between py-6 px-4 scanline">
+
+    <!-- Interactive Neural Net Particle Canvas Background -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Firebase Module Setup (Safe Dynamic Loading) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, addDoc, getDocs, collection, query, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global DB variables
+        let db = null;
+        let auth = null;
+        let appId = "default-app-id";
+
+        // Try initializing live database
+        try {
+            if (typeof __app_id !== 'undefined') appId = __app_id;
+            
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                
+                // Authenticate before doing queries
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                console.log("Database initialized successfully!");
+            }
+        } catch (e) {
+            console.warn("Using offline in-memory fallback database:", e);
+        }
+
+        // Export handlers globally
+        window.saveRegistration = async function(studentData) {
+            if (db && auth && auth.currentUser) {
+                try {
+                    const path = `/artifacts/${appId}/public/data/registrations`;
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'registrations'), {
+                        ...studentData,
+                        createdAt: new Date().toISOString()
+                    });
+                    return true;
+                } catch (err) {
+                    console.error("Firebase save failed, falling back to storage:", err);
+                }
+            }
+            // Offline/Local Storage fallback
+            let localRecords = JSON.parse(localStorage.getItem('registrations_backup') || '[]');
+            studentData.id = "reg_" + Date.now();
+            studentData.createdAt = new Date().toISOString();
+            localRecords.push(studentData);
+            localStorage.setItem('registrations_backup', JSON.stringify(localRecords));
+            return true;
+        };
+
+        window.fetchRegistrations = async function() {
+            if (db && auth && auth.currentUser) {
+                try {
+                    const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'registrations'));
+                    let list = [];
+                    snap.forEach(doc => {
+                        list.push({ id: doc.id, ...doc.data() });
+                    });
+                    return list;
+                } catch (err) {
+                    console.error("Firebase read failed:", err);
+                }
+            }
+            return JSON.parse(localStorage.getItem('registrations_backup') || '[]');
+        };
+    </script>
+
+    <!-- UI: Brand Header -->
+    <header class="max-w-xl mx-auto w-full text-center mb-6 ui-element">
+        <div class="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/30 px-3.5 py-1.5 rounded-full mb-3 shadow-lg shadow-blue-500/10">
+            <span class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+            <span class="text-[10px] font-extrabold text-blue-400 tracking-widest uppercase font-mono">LIVE MATRIX REGISTRATION CONNECTED</span>
+        </div>
+        <h1 class="text-3xl sm:text-4xl font-black text-white header-font tracking-tight drop-shadow-[0_0_15px_rgba(255,255,255,0.1)]">ARCHITECT INTELLIGENCE</h1>
+        <p class="text-xs sm:text-sm text-blue-400 font-mono mt-1 uppercase tracking-wider">Free Masterclass & Flagship 45-Day Boot Camp</p>
+    </header>
+
+    <!-- FAANG & Top Startup Placement Trust Banner -->
+    <div class="max-w-xl mx-auto w-full mb-6 text-center ui-element px-4">
+        <p class="text-[9px] text-slate-500 uppercase tracking-[0.25em] font-mono mb-2">Designed for Careers at Top Product Companies</p>
+        <div class="flex flex-wrap justify-center items-center gap-x-5 gap-y-2 opacity-50 hover:opacity-80 transition-opacity duration-300 text-[11px] text-slate-400 font-mono font-bold uppercase tracking-wider">
+            <span class="flex items-center gap-1"><i class="fa-brands fa-google text-blue-500"></i> Google</span>
+            <span class="text-slate-700">•</span>
+            <span class="flex items-center gap-1"><i class="fa-brands fa-amazon text-amber-500"></i> Amazon</span>
+            <span class="text-slate-700">•</span>
+            <span class="flex items-center gap-1"><i class="fa-brands fa-microsoft text-sky-400"></i> Microsoft</span>
+            <span class="text-slate-700">•</span>
+            <span class="flex items-center gap-1"><i class="fa-brands fa-meta text-blue-400"></i> Meta</span>
+        </div>
+    </div>
+
+    <!-- UI: Main Content Frame -->
+    <main class="max-w-xl mx-auto w-full flex-1 flex flex-col justify-center ui-element">
+
+        <!-- Form Panel Card -->
+        <div id="form-panel" onmousemove="handleCardGlow(event)" onmouseleave="resetCardGlow()" 
+             class="cyber-card rounded-2xl p-6 sm:p-8 shadow-2xl transition-all duration-300 overflow-hidden">
+            
+            <!-- Dynamic scanning laser beam effect -->
+            <div class="laser-beam"></div>
+            
+            <!-- Core Tech Competency Grid -->
+            <div class="grid grid-cols-3 gap-2 mb-5">
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5 text-center transition-all hover:border-blue-500/30">
+                    <i class="fa-solid fa-cubes text-blue-500 text-xs mb-1 block"></i>
+                    <span class="text-[8px] font-extrabold text-slate-400 font-mono uppercase tracking-widest block">System Design</span>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5 text-center transition-all hover:border-blue-500/30">
+                    <i class="fa-solid fa-code-merge text-indigo-400 text-xs mb-1 block"></i>
+                    <span class="text-[8px] font-extrabold text-slate-400 font-mono uppercase tracking-widest block">Clean Code</span>
+                </div>
+                <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-2.5 text-center transition-all hover:border-blue-500/30">
+                    <i class="fa-solid fa-cloud-bolt text-purple-400 text-xs mb-1 block"></i>
+                    <span class="text-[8px] font-extrabold text-slate-400 font-mono uppercase tracking-widest block">API Scaling</span>
+                </div>
+            </div>
+
+            <!-- Urgency Seat Tracker -->
+            <div class="bg-blue-950/40 border border-blue-500/20 rounded-xl p-4 mb-6 flex items-center justify-between gap-3 shadow-inner">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-blue-500/15 text-blue-400 flex items-center justify-center text-lg shrink-0 border border-blue-500/20">
+                        <i class="fa-solid fa-gift animate-bounce"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs sm:text-sm font-bold text-white">Early Bird 20% Discount Active</h4>
+                        <p class="text-[10px] text-emerald-400 font-semibold mt-0.5 font-mono">₹5,440 instead of ₹6,800</p>
+                    </div>
+                </div>
+                <div class="text-right shrink-0">
+                    <span id="early-bird-timer" class="text-xs font-extrabold bg-blue-600 text-white px-2.5 py-1.5 rounded-lg font-mono shadow-md shadow-blue-500/30 border border-blue-400/30">8 / 12 Seats Left</span>
+                </div>
+            </div>
+
+            <!-- Interactive Registration Form -->
+            <form id="masterclass-form" onsubmit="handleRegistrationSubmit(event)" class="space-y-4">
+                
+                <!-- Full Name -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Full Name</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
+                            <i class="fa-solid fa-user"></i>
+                        </span>
+                        <input type="text" id="fullname" required placeholder="Enter your full name" onfocus="playCyberSound('hover')"
+                            class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all">
+                    </div>
+                </div>
+
+                <!-- Phone & Email Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- WhatsApp Phone Number -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">WhatsApp Number</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
+                                <i class="fa-brands fa-whatsapp text-emerald-500"></i>
+                            </span>
+                            <input type="tel" id="whatsapp" required placeholder="10-digit number" oninput="validatePhoneInput(this)" onfocus="playCyberSound('hover')"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-mono">
+                        </div>
+                        <p id="wa-warning" class="hidden text-[10px] text-red-400 mt-1">Please enter a valid 10-digit Indian number (starts with 6-9).</p>
+                    </div>
+
+                    <!-- Email Address -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
+                                <i class="fa-solid fa-envelope"></i>
+                            </span>
+                            <input type="email" id="email" required placeholder="name@domain.com" onfocus="playCyberSound('hover')"
+                                class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Academic Details -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">College & Branch Name</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
+                            <i class="fa-solid fa-graduation-cap"></i>
+                        </span>
+                        <input type="text" id="college" required placeholder="e.g., Thapar University, BTech CSE" onfocus="playCyberSound('hover')"
+                            class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all">
+                    </div>
+                </div>
+
+                <!-- Class Year & Skill Selectors -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Academic Year -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Current Academic Year</label>
+                        <select id="academic-year" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            <option value="1">1st Year (Fresher)</option>
+                            <option value="2">2nd Year (Sophomore)</option>
+                            <option value="3">3rd Year (Junior)</option>
+                            <option value="4">4th Year (Senior)</option>
+                        </select>
+                    </div>
+
+                    <!-- Coding Skill Level -->
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Current Coding Level</label>
+                        <select id="coding-level" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                            <option value="beginner">Absolute Beginner (Zero Code)</option>
+                            <option value="intermediate">Intermediate (Know syntax)</option>
+                            <option value="active">Active Builder (Practicing DSA / Web)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Registration Track Selection -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">What are you registering for?</label>
+                    <select id="registration-type" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-blue-900 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                        <option value="Both">Both — Masterclass + Flagship 45-Day Boot Camp (₹5,440)</option>
+                        <option value="Masterclass">Free 60-Minute Interactive Masterclass Only</option>
+                        <option value="Premium">Premium 45-Day Boot Camp (Discount Locked)</option>
+                    </select>
+                </div>
+
+                <!-- Personal doubts text block -->
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Your biggest placement fear or coding doubt? (Optional)</label>
+                    <textarea id="student-fear" rows="2" placeholder="e.g., Will AI replace coders? How do I deploy my first live app?" onfocus="playCyberSound('hover')"
+                        class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all resize-none"></textarea>
+                </div>
+
+                <!-- Interactive cyber submission trigger button -->
+                <button type="submit" class="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3.5 rounded-xl text-sm transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 transform active:scale-95 border border-blue-400/30">
+                    <span>Transmit Secure Registration</span> <i class="fa-solid fa-arrow-right animate-pulse"></i>
+                </button>
+            </form>
+        </div>
+
+        <!-- Post-Submission Interactive Hub (Success Panel - Hidden by default) -->
+        <div id="success-panel" class="hidden flex-col bg-slate-900/95 rounded-2xl glow-active p-6 sm:p-8 backdrop-blur-md fade-in relative overflow-hidden">
+            
+            <div class="laser-beam"></div>
+
+            <div class="text-center mb-6">
+                <div class="w-14 h-14 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-2xl mx-auto mb-3 border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
+                    <i class="fa-solid fa-circle-check animate-bounce"></i>
+                </div>
+                <h2 class="text-2xl font-extrabold text-white header-font tracking-tight">TRANSMISSION SECURED!</h2>
+                <p class="text-xs text-slate-400 mt-1">Unique student record initialized under: <span id="summary-email" class="text-blue-400 font-mono font-medium"></span></p>
+            </div>
+
+            <!-- Interactive community redirection channels -->
+            <div class="space-y-4">
+                <!-- Glowing WhatsApp Community trigger -->
+                <div class="bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-5 shadow-inner">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 block mb-1.5">📢 ACTION REQUIRED</span>
+                    <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                        Join the official **Architect Intelligence Hub** community channel on WhatsApp right now to secure your seat credentials, Zoom links, and receive your PDF checklists:
+                    </p>
+                    <a id="whatsapp-join-btn" href="https://chat.whatsapp.com/BieaVCxws30AAbibn32zw8" target="_blank" onclick="playCyberSound('click')"
+                       class="w-full bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-bold py-3.5 rounded-xl text-xs transition-colors flex items-center justify-center gap-2 text-center shadow-lg shadow-emerald-600/20 border border-emerald-400/30">
+                        <i class="fa-brands fa-whatsapp text-lg"></i> Join WhatsApp Community Hub Now
+                    </a>
+                </div>
+
+                <!-- Zoom Seminar Credentials schedule -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
+                    <span class="text-[10px] font-extrabold uppercase tracking-widest text-blue-400 block mb-1.5"><i class="fa-solid fa-video mr-1"></i> Interactive Seminar Credentials</span>
+                    <div class="space-y-1.5 text-xs text-slate-300 font-mono">
+                        <p class="flex items-center gap-2"><strong class="text-slate-500">Date & Time:</strong> Monday, 8 June 2026 @ 2:00 PM</p>
+                        <p class="flex items-center gap-2"><strong class="text-slate-500">Classroom:</strong> Virtual Zoom Online Masterclass</p>
+                        <p class="flex items-center gap-2"><strong class="text-slate-500">Access Key:</strong> Dispatched inside WhatsApp Hub</p>
+                    </div>
+                </div>
+
+                <!-- Dynamic localized tech map showcase -->
+                <div class="border-t border-slate-800 pt-5">
+                    <div class="flex items-center justify-between mb-3.5">
+                        <span class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5 font-mono">
+                            <i class="fa-solid fa-terminal"></i> ACCELERATED ROADMAP ACCESSED
+                        </span>
+                        <span id="display-year-badge" class="text-[10px] bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2.5 py-0.5 rounded-md font-mono font-bold uppercase"></span>
+                    </div>
+
+                    <!-- Steps build from script -->
+                    <div id="dynamic-roadmap-steps" class="space-y-3"></div>
+                </div>
+            </div>
+
+            <!-- Simple Back option -->
+            <button onclick="toggleFormPanel()" class="mt-6 text-xs text-slate-500 hover:text-slate-300 text-center transition-colors underline block mx-auto font-mono">
+                [ Need to register another attendee? ]
+            </button>
+        </div>
+
+        <!-- SECURE ADMIN DASHBOARD PANEL (Passcode unlocked) -->
+        <div id="admin-panel" class="hidden flex-col bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 backdrop-blur-md fade-in max-w-2xl mx-auto w-full relative overflow-hidden">
+            <div class="laser-beam"></div>
+            
+            <div class="flex items-center justify-between pb-4 border-b border-slate-800 mb-6">
+                <div>
+                    <h2 class="text-xl font-black text-white header-font flex items-center gap-2">
+                        <i class="fa-solid fa-user-shield text-blue-500"></i> SECURE AUDIENCE PANEL
+                    </h2>
+                    <p class="text-[10px] text-slate-400 font-mono">Real-time student lead list and export utilities</p>
+                </div>
+                <button onclick="logoutAdmin()" class="bg-slate-950 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors font-mono">
+                    Exit Admin
+                </button>
+            </div>
+
+            <!-- Stats dynamic panel -->
+            <div class="grid grid-cols-3 gap-3 mb-6 text-center">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span id="stat-total" class="text-xl font-bold text-blue-500 font-mono">0</span>
+                    <p class="text-[9px] uppercase tracking-wider text-slate-500 mt-0.5 font-bold">Total Registrations</p>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span id="stat-both" class="text-xl font-bold text-emerald-500 font-mono">0</span>
+                    <p class="text-[9px] uppercase tracking-wider text-slate-500 mt-0.5 font-bold">Both (Premium)</p>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                    <span id="stat-freshers" class="text-xl font-bold text-orange-500 font-mono">0</span>
+                    <p class="text-[9px] uppercase tracking-wider text-slate-500 mt-0.5 font-bold">1st Year Freshers</p>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <select id="filter-academic-year" onchange="applyAdminFilters()" class="w-full sm:w-40 bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-300 font-mono">
+                        <option value="all">All Academic Years</option>
+                        <option value="1">1st Year Only</option>
+                        <option value="2">2nd Year Only</option>
+                        <option value="3">3rd Year Only</option>
+                        <option value="4">4th Year Only</option>
+                    </select>
+                </div>
+                <button onclick="downloadRegistrationsCSV()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 border border-emerald-500/30">
+                    <i class="fa-solid fa-file-csv text-base"></i> Export Data to CSV
+                </button>
+            </div>
+
+            <!-- Table Roster -->
+            <div class="overflow-x-auto bg-slate-950 border border-slate-800 rounded-xl max-h-[300px]">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-900 text-[10px] uppercase text-slate-400 font-bold tracking-wider border-b border-slate-800">
+                            <th class="p-3">Name</th>
+                            <th class="p-3">WhatsApp</th>
+                            <th class="p-3">College</th>
+                            <th class="p-3">Year</th>
+                            <th class="p-3">Track</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-roster-body" class="text-xs text-slate-300 divide-y divide-slate-900 font-mono"></tbody>
+                </table>
+                <div id="admin-empty-notice" class="hidden text-slate-500 text-center py-8 text-xs font-light font-mono">
+                    No active transmissions stored.
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- UI: Footer Branding with Secret Backdoor Trigger -->
+    <footer class="max-w-xl mx-auto w-full text-center mt-6 text-[10px] text-slate-600 select-none ui-element">
+        <p class="inline-flex items-center gap-1.5 font-mono">
+            <span>© 2026 Architect Intelligence. All Rights Reserved.</span>
+            <button onclick="handleAdminSecretTrigger()" class="text-slate-700 hover:text-blue-500 transition-colors focus:outline-none">
+                <i class="fa-solid fa-shield-halved"></i>
+            </button>
+        </p>
+    </footer>
+
+    <!-- Verification Modal -->
+    <div id="auth-modal" class="hidden fixed inset-0 bg-black/90 backdrop-blur-md items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center glow-active">
+            <div class="w-12 h-12 rounded-full bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl mx-auto mb-3 border border-blue-500/20">
+                <i class="fa-solid fa-key"></i>
+            </div>
+            <h3 class="text-base font-bold text-white header-font">Enter Admin Passcode</h3>
+            <p class="text-[11px] text-slate-400 mt-1 mb-4 font-mono">Please authenticate to load real-time analytics.</p>
+            
+            <input type="password" id="admin-passcode-field" placeholder="••••••••"
+                class="w-full bg-slate-950 border border-slate-800 rounded-lg py-2.5 px-4 text-center font-mono text-white text-base focus:outline-none focus:ring-2 focus:ring-blue-600 mb-4">
+            
+            <div class="flex items-center gap-2">
+                <button onclick="dismissAuthModal()" class="w-1/2 bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-400 font-semibold py-2 rounded-lg text-xs transition-colors font-mono">
+                    Cancel
+                </button>
+                <button onclick="verifyAdminPasscode()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-xs transition-colors shadow-md shadow-blue-500/20 font-mono">
+                    Verify
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripting Engines -->
+    <script>
+        let cyberAudioCtx = null;
+        function playCyberSound(style) {
+            try {
+                if (!cyberAudioCtx) {
+                    cyberAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (cyberAudioCtx.state === 'suspended') {
+                    cyberAudioCtx.resume();
+                }
+
+                const osc = cyberAudioCtx.createOscillator();
+                const gainNode = cyberAudioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(cyberAudioCtx.destination);
+
+                if (style === 'hover') {
+                    // Subtle dynamic interface chirps
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1200, cyberAudioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1500, cyberAudioCtx.currentTime + 0.04);
+                    gainNode.gain.setValueAtTime(0.005, cyberAudioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0, cyberAudioCtx.currentTime + 0.04);
+                    osc.start();
+                    osc.stop(cyberAudioCtx.currentTime + 0.04);
+                } else if (style === 'click') {
+                    // Futuristic input submission pulse
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, cyberAudioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1000, cyberAudioCtx.currentTime + 0.08);
+                    gainNode.gain.setValueAtTime(0.04, cyberAudioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0, cyberAudioCtx.currentTime + 0.08);
+                    osc.start();
+                    osc.stop(cyberAudioCtx.currentTime + 0.08);
+                } else if (style === 'success') {
+                    // Double sweeping dynamic telemetry rise
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(800, cyberAudioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(1600, cyberAudioCtx.currentTime + 0.12);
+                    osc.frequency.exponentialRampToValueAtTime(2400, cyberAudioCtx.currentTime + 0.25);
+                    gainNode.gain.setValueAtTime(0.06, cyberAudioCtx.currentTime);
+                    gainNode.gain.linearRampToValueAtTime(0, cyberAudioCtx.currentTime + 0.25);
+                    osc.start();
+                    osc.stop(cyberAudioCtx.currentTime + 0.25);
+                }
+            } catch (e) {
+                // Browsers safely suppress audio if not interacted with first
+            }
+        }
+
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let mouseX = null;
+        let mouseY = null;
+
+        // Custom assets for premium background
+        let constellationNodes = [];
+        let laserPulses = [];
+        let gradientOrbs = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initializeBackgroundAssets();
+        }
+
+        class GradientOrb {
+            constructor(x, y, radius, color, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.color = color;
+                this.vx = vx;
+                this.vy = vy;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) this.vx *= -1;
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) this.vy *= -1;
+            }
+            draw() {
+                const grad = ctx.createRadialGradient(this.x, this.y, 10, this.x, this.y, this.radius);
+                grad.addColorStop(0, this.color);
+                grad.addColorStop(1, 'transparent');
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        class LaserPulse {
+            constructor() {
+                this.reset();
+            }
+            reset() {
+                this.axis = Math.random() < 0.5 ? 'h' : 'v';
+                this.gridSize = 60;
+                if (this.axis === 'h') {
+                    this.y = Math.floor(Math.random() * (canvas.height / this.gridSize)) * this.gridSize;
+                    this.x = Math.random() < 0.5 ? 0 : canvas.width;
+                    this.vx = (this.x === 0 ? 1 : -1) * (Math.random() * 2 + 1);
+                    this.vy = 0;
+                } else {
+                    this.x = Math.floor(Math.random() * (canvas.width / this.gridSize)) * this.gridSize;
+                    this.y = Math.random() < 0.5 ? 0 : canvas.height;
+                    this.vy = (this.y === 0 ? 1 : -1) * (Math.random() * 2 + 1);
+                    this.vx = 0;
+                }
+                this.length = Math.random() * 60 + 40;
+                this.color = Math.random() < 0.5 ? 'rgba(59, 130, 246, 0.4)' : 'rgba(139, 92, 246, 0.4)';
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                if (this.axis === 'h') {
+                    if (this.vx > 0 && this.x > canvas.width) this.reset();
+                    if (this.vx < 0 && this.x + this.length < 0) this.reset();
+                } else {
+                    if (this.vy > 0 && this.y > canvas.height) this.reset();
+                    if (this.vy < 0 && this.y + this.length < 0) this.reset();
+                }
+            }
+            draw() {
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                if (this.axis === 'h') {
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.x - (this.vx > 0 ? this.length : -this.length), this.y);
+                } else {
+                    ctx.moveTo(this.x, this.y);
+                    ctx.lineTo(this.x, this.y - (this.vy > 0 ? this.length : -this.length));
+                }
+                ctx.stroke();
+            }
+        }
+
+        class ConstellationNode {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.radius = Math.random() * 1.5 + 0.5;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+
+                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+
+                if (mouseX !== null && mouseY !== null) {
+                    const dx = this.x - mouseX;
+                    const dy = this.y - mouseY;
+                    const dist = Math.hypot(dx, dy);
+                    if (dist < 120) {
+                        const force = (120 - dist) / 120;
+                        this.x += (dx / dist) * force * 1.5;
+                        this.y += (dy / dist) * force * 1.5;
+                    }
+                }
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.4)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initializeBackgroundAssets() {
+            gradientOrbs = [
+                new GradientOrb(canvas.width * 0.25, canvas.height * 0.25, Math.min(canvas.width, canvas.height) * 0.4, 'rgba(59, 130, 246, 0.12)', 0.1, 0.05),
+                new GradientOrb(canvas.width * 0.75, canvas.height * 0.75, Math.min(canvas.width, canvas.height) * 0.5, 'rgba(139, 92, 246, 0.08)', -0.05, 0.1),
+                new GradientOrb(canvas.width * 0.5, canvas.height * 0.5, Math.min(canvas.width, canvas.height) * 0.3, 'rgba(6, 182, 212, 0.05)', -0.08, -0.05)
+            ];
+
+            constellationNodes = [];
+            const count = Math.min(45, Math.floor((canvas.width * canvas.height) / 32000));
+            for (let i = 0; i < count; i++) {
+                constellationNodes.push(new ConstellationNode());
+            }
+
+            laserPulses = [];
+            for (let i = 0; i < 6; i++) {
+                laserPulses.push(new LaserPulse());
+            }
+        }
+
+        function drawBackground() {
+            ctx.fillStyle = '#02040a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Draw glowing gradient orbs
+            gradientOrbs.forEach(orb => {
+                orb.update();
+                orb.draw();
+            });
+
+            // 2. Draw Precision Grid with interactive intersection glows
+            const gridSize = 60;
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.02)';
+            ctx.lineWidth = 1;
+            
+            // Draw Vertical lines
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            // Draw Horizontal lines
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // Draw glowing intersections near cursor
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                for (let y = 0; y < canvas.height; y += gridSize) {
+                    if (mouseX !== null && mouseY !== null) {
+                        const dist = Math.hypot(x - mouseX, y - mouseY);
+                        if (dist < 180) {
+                            const intensity = (180 - dist) / 180;
+                            ctx.fillStyle = `rgba(59, 130, 246, ${intensity * 0.15})`;
+                            ctx.beginPath();
+                            ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    }
+                }
+            }
+
+            // 3. Draw Laser Data tracks
+            laserPulses.forEach(pulse => {
+                pulse.update();
+                pulse.draw();
+            });
+
+            // 4. Draw Constellation Network
+            ctx.strokeStyle = 'rgba(59, 130, 246, 0.04)';
+            ctx.lineWidth = 0.8;
+            constellationNodes.forEach((node, idx) => {
+                node.update();
+                node.draw();
+
+                for (let j = idx + 1; j < constellationNodes.length; j++) {
+                    const node2 = constellationNodes[j];
+                    const dist = Math.hypot(node.x - node2.x, node.y - node2.y);
+                    if (dist < 130) {
+                        ctx.beginPath();
+                        ctx.moveTo(node.x, node.y);
+                        ctx.lineTo(node2.x, node2.y);
+                        ctx.stroke();
+                    }
+                }
+            });
+
+            requestAnimationFrame(drawBackground);
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+        window.addEventListener('mouseout', () => {
+            mouseX = null;
+            mouseY = null;
+        });
+
+        resizeCanvas();
+        drawBackground();
+
+        function handleCardGlow(event) {
+            const card = document.getElementById('form-panel');
+            const rect = card.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            // Set glowing spotlight positions inside card boundaries
+            card.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+            card.style.boxShadow = `0 10px 30px -10px rgba(59, 130, 246, 0.15), inset ${x / 10}px ${y / 10}px 35px -25px rgba(59, 130, 246, 0.12)`;
+        }
+
+        function resetCardGlow() {
+            const card = document.getElementById('form-panel');
+            card.style.borderColor = 'rgba(59, 130, 246, 0.15)';
+            card.style.boxShadow = 'none';
+        }
+
+        let seatLimit = 8;
+        setInterval(() => {
+            if (seatLimit > 3 && Math.random() < 0.1) {
+                seatLimit--;
+                document.getElementById('early-bird-timer').innerText = `${seatLimit} / 12 Seats Left`;
+            }
+        }, 15000);
+
+        function validatePhoneInput(field) {
+            const pattern = /^[6-9]\d{9}$/;
+            const error = document.getElementById('wa-warning');
+            if (field.value && !pattern.test(field.value)) {
+                error.classList.remove('hidden');
+                field.style.borderColor = '#ef4444';
+            } else {
+                error.classList.add('hidden');
+                field.style.borderColor = 'rgba(30, 41, 59, 1)';
+            }
+        }
+
+        async function handleRegistrationSubmit(event) {
+            event.preventDefault();
+            playCyberSound('click');
+
+            const name = document.getElementById('fullname').value;
+            const wa = document.getElementById('whatsapp').value;
+            const mail = document.getElementById('email').value;
+            const college = document.getElementById('college').value;
+            const year = document.getElementById('academic-year').value;
+            const skill = document.getElementById('coding-level').value;
+            const track = document.getElementById('registration-type').value;
+            const fear = document.getElementById('student-fear').value;
+
+            const pattern = /^[6-9]\d{9}$/;
+            if (!pattern.test(wa)) {
+                playCyberSound('hover');
+                return;
+            }
+
+            // Save payload details safely
+            const record = { name, whatsapp: wa, email: mail, college, year, skill, track, fear };
+            await window.saveRegistration(record);
+
+            playCyberSound('success');
+
+            // Force target group redirection trigger on the Success CTA
+            document.getElementById('whatsapp-join-btn').href = "https://chat.whatsapp.com/BieaVCxws30AAbibn32zw8";
+
+            document.getElementById('summary-email').innerText = mail;
+            document.getElementById('display-year-badge').innerText = `YEAR ${year} Blueprint`;
+
+            renderPersonalizedBlueprint(year, skill);
+
+            document.getElementById('form-panel').classList.add('hidden');
+            document.getElementById('success-panel').classList.remove('hidden');
+            document.getElementById('success-panel').classList.add('flex');
+        }
+
+        function renderPersonalizedBlueprint(year, skill) {
+            const container = document.getElementById('dynamic-roadmap-steps');
+            container.innerHTML = '';
+
+            let roadmapData = [];
+            if (year === "1") {
+                roadmapData = [
+                    {
+                        title: "Month 1 - 3: Logic Building & Syntax Mastery",
+                        desc: "Master one structural programming syntax cleanly (C++ or Python). Avoid framework loops. Solve 100+ logical puzzles."
+                    },
+                    {
+                        title: "Month 4 - 6: Setting up Git & Establishing GitHub",
+                        desc: "Make logic-building public. Push consistent commits to verify coding consistency to future recruiters."
+                    },
+                    {
+                        title: "Y2 Milestone: Dynamic Responsive Layout Interfaces",
+                        desc: "Learn CSS Flexbox/Grids and modern Tailwind styling. Construct robust frontend displays using zero template dependencies."
+                    }
+                ];
+            } else if (year === "2") {
+                roadmapData = [
+                    {
+                        title: "Month 1 - 3: Dynamic JS Engine & Interface Rendering",
+                        desc: "Understand dynamic arrays, DOM mapping, promises, and JSON handling natively without external imports."
+                    },
+                    {
+                        title: "Month 4 - 6: React.js Component Orchestration",
+                        desc: "Create full single-page layouts. Build modular components managing global variables cleanly."
+                    },
+                    {
+                        title: "Y3 Milestone: Secure Database Relational Layouts",
+                        desc: "Connect local backend setups with document structure configurations (MongoDB) or safe relational lists (PostgreSQL)."
+                    }
+                ];
+            } else {
+                roadmapData = [
+                    {
+                        title: "Month 1 - 2: Secure Node.js Backend Framework API & Token Checks",
+                        desc: "Implement live servers, user authentication, password hashing, and encrypted cookies safely using middleware rules."
+                    },
+                    {
+                        title: "Month 3: Deployment Platforms & Live Environments",
+                        desc: "Scale systems to live server channels (Vercel, Render) safely. Local repositories hold zero placement conversion credit."
+                    },
+                    {
+                        title: "Career Focus: Build the Smart AI Portfolio Hub",
+                        desc: "Integrate actual OpenAI/Gemini API endpoints in your deployed projects. Proves direct industrial-level capability to corporate heads."
+                    }
+                ];
+            }
+
+            roadmapData.forEach((step, idx) => {
+                const markup = `
+                    <div class="flex items-start gap-3 bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/80 transition-transform duration-200 hover:-translate-y-0.5">
+                        <span class="w-6 h-6 rounded-full bg-blue-500/10 text-blue-400 font-bold text-xs flex items-center justify-center shrink-0 font-mono border border-blue-500/20">
+                            ${idx + 1}
+                        </span>
+                        <div>
+                            <h5 class="text-xs font-bold text-white font-mono">${step.title}</h5>
+                            <p class="text-[11px] text-slate-400 mt-1 leading-normal font-sans">${step.desc}</p>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += markup;
+            });
+        }
+
+        function toggleFormPanel() {
+            playCyberSound('click');
+            document.getElementById('masterclass-form').reset();
+            document.getElementById('form-panel').classList.remove('hidden');
+            document.getElementById('success-panel').classList.add('hidden');
+            document.getElementById('success-panel').classList.remove('flex');
+        }
+
+        let adminClickCount = 0;
+        let activeRecords = [];
+
+        function handleAdminSecretTrigger() {
+            playCyberSound('hover');
+            adminClickCount++;
+            if (adminClickCount >= 3) {
+                adminClickCount = 0;
+                playCyberSound('click');
+                document.getElementById('auth-modal').classList.remove('hidden');
+                document.getElementById('auth-modal').classList.add('flex');
+                document.getElementById('admin-passcode-field').focus();
+            }
+        }
+
+        function dismissAuthModal() {
+            playCyberSound('click');
+            document.getElementById('auth-modal').classList.add('hidden');
+            document.getElementById('auth-modal').classList.remove('flex');
+            document.getElementById('admin-passcode-field').value = '';
+        }
+
+        async function verifyAdminPasscode() {
+            const pass = document.getElementById('admin-passcode-field').value;
+            if (pass === "amit97799") {
+                playCyberSound('success');
+                dismissAuthModal();
+                document.getElementById('form-panel').classList.add('hidden');
+                document.getElementById('success-panel').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                document.getElementById('admin-panel').classList.add('flex');
+                await loadAdminRoster();
+            } else {
+                playCyberSound('hover');
+                alert("Incorrect passcode! Access Denied.");
+            }
+        }
+
+        function logoutAdmin() {
+            playCyberSound('click');
+            document.getElementById('admin-panel').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('flex');
+            document.getElementById('form-panel').classList.remove('hidden');
+        }
+
+        async function loadAdminRoster() {
+            activeRecords = await window.fetchRegistrations();
+            calculateDashboardStats(activeRecords);
+            renderRosterRows(activeRecords);
+        }
+
+        function calculateDashboardStats(records) {
+            document.getElementById('stat-total').innerText = records.length;
+            
+            const bothCount = records.filter(r => r.track === "Both").length;
+            document.getElementById('stat-both').innerText = bothCount;
+
+            const year1Count = records.filter(r => r.year === "1").length;
+            document.getElementById('stat-freshers').innerText = year1Count;
+        }
+
+        function renderRosterRows(records) {
+            const body = document.getElementById('admin-roster-body');
+            const notice = document.getElementById('admin-empty-notice');
+            body.innerHTML = '';
+
+            if (records.length === 0) {
+                notice.classList.remove('hidden');
+                return;
+            } else {
+                notice.classList.add('hidden');
+            }
+
+            records.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-900/50 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-white">${r.name || 'Anonymous'}</td>
+                    <td class="p-3 font-mono text-slate-400">${r.whatsapp || ''}</td>
+                    <td class="p-3 text-slate-400 text-xs">${r.college || ''}</td>
+                    <td class="p-3"><span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded font-mono font-bold uppercase text-[10px]">Y${r.year}</span></td>
+                    <td class="p-3"><span class="font-medium ${r.track === 'Both' ? 'text-emerald-400' : 'text-slate-400'}">${r.track || ''}</span></td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        function applyAdminFilters() {
+            playCyberSound('hover');
+            const filterVal = document.getElementById('filter-academic-year').value;
+            let filtered = activeRecords;
+            if (filterVal !== "all") {
+                filtered = activeRecords.filter(r => r.year === filterVal);
+            }
+            renderRosterRows(filtered);
+        }
+
+        function downloadRegistrationsCSV() {
+            playCyberSound('click');
+            if (activeRecords.length === 0) {
+                alert("No registered student data to export yet!");
+                return;
+            }
+
+            let csv = "Name,WhatsApp Number,Email Address,College & Branch,Academic Year,Coding Experience,Registration Track,Placement Fear,Created At\n";
+            activeRecords.forEach(r => {
+                const cleanStr = (val) => val ? `"${val.replace(/"/g, '""')}"` : '""';
+                csv += `${cleanStr(r.name)},${cleanStr(r.whatsapp)},${cleanStr(r.email)},${cleanStr(r.college)},${cleanStr(r.year)},${cleanStr(r.skill)},${cleanStr(r.track)},${cleanStr(r.fear)},${cleanStr(r.createdAt)}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute('download', `Architect_Intelligence_Registrations_${Date.now()}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
