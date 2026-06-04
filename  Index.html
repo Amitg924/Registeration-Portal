@@ -125,7 +125,6 @@
         window.saveRegistration = async function(studentData) {
             if (db && auth && auth.currentUser) {
                 try {
-                    const path = `/artifacts/${appId}/public/data/registrations`;
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'registrations'), {
                         ...studentData,
                         createdAt: new Date().toISOString()
@@ -237,7 +236,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
                             <i class="fa-solid fa-user"></i>
                         </span>
-                        <input type="text" id="fullname" required placeholder="Enter your full name" onfocus="playCyberSound('hover')"
+                        <input type="text" id="fullname" name="Name" required placeholder="Enter your full name" onfocus="playCyberSound('hover')"
                             class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all">
                     </div>
                 </div>
@@ -251,7 +250,7 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
                                 <i class="fa-brands fa-whatsapp text-emerald-500"></i>
                             </span>
-                            <input type="tel" id="whatsapp" required placeholder="10-digit number" oninput="validatePhoneInput(this)" onfocus="playCyberSound('hover')"
+                            <input type="tel" id="whatsapp" name="WhatsApp" required placeholder="10-digit number" oninput="validatePhoneInput(this)" onfocus="playCyberSound('hover')"
                                 class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all font-mono">
                         </div>
                         <p id="wa-warning" class="hidden text-[10px] text-red-400 mt-1">Please enter a valid 10-digit Indian number (starts with 6-9).</p>
@@ -264,7 +263,7 @@
                             <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
                                 <i class="fa-solid fa-envelope"></i>
                             </span>
-                            <input type="email" id="email" required placeholder="name@domain.com" onfocus="playCyberSound('hover')"
+                            <input type="email" id="email" name="Email" required placeholder="name@domain.com" onfocus="playCyberSound('hover')"
                                 class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all">
                         </div>
                     </div>
@@ -277,7 +276,7 @@
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-sm">
                             <i class="fa-solid fa-graduation-cap"></i>
                         </span>
-                        <input type="text" id="college" required placeholder="e.g., Thapar University, BTech CSE" onfocus="playCyberSound('hover')"
+                        <input type="text" id="college" name="College" required placeholder="e.g., Thapar University, BTech CSE" onfocus="playCyberSound('hover')"
                             class="w-full bg-slate-950/80 border border-slate-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all">
                     </div>
                 </div>
@@ -287,7 +286,7 @@
                     <!-- Academic Year -->
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Current Academic Year</label>
-                        <select id="academic-year" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                        <select id="academic-year" name="Year" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-mono">
                             <option value="1">1st Year (Fresher)</option>
                             <option value="2">2nd Year (Sophomore)</option>
                             <option value="3">3rd Year (Junior)</option>
@@ -298,7 +297,7 @@
                     <!-- Coding Skill Level -->
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Current Coding Level</label>
-                        <select id="coding-level" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                        <select id="coding-level" name="Level" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-slate-800 rounded-xl py-3 px-4 text-sm text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-mono">
                             <option value="beginner">Absolute Beginner (Zero Code)</option>
                             <option value="intermediate">Intermediate (Know syntax)</option>
                             <option value="active">Active Builder (Practicing DSA / Web)</option>
@@ -309,7 +308,7 @@
                 <!-- Registration Track Selection -->
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">What are you registering for?</label>
-                    <select id="registration-type" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-blue-900 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all">
+                    <select id="registration-type" name="Track" required onfocus="playCyberSound('hover')" class="w-full bg-slate-950 border border-blue-900 rounded-xl py-3.5 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 transition-all font-mono">
                         <option value="Both">Both — Masterclass + Flagship 45-Day Boot Camp (₹5,440)</option>
                         <option value="Masterclass">Free 60-Minute Interactive Masterclass Only</option>
                         <option value="Premium">Premium 45-Day Boot Camp (Discount Locked)</option>
@@ -319,7 +318,7 @@
                 <!-- Personal doubts text block -->
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">Your biggest placement fear or coding doubt? (Optional)</label>
-                    <textarea id="student-fear" rows="2" placeholder="e.g., Will AI replace coders? How do I deploy my first live app?" onfocus="playCyberSound('hover')"
+                    <textarea id="student-fear" name="Fear" rows="2" placeholder="e.g., Will AI replace coders? How do I deploy my first live app?" onfocus="playCyberSound('hover')"
                         class="w-full bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent transition-all resize-none"></textarea>
                 </div>
 
@@ -361,7 +360,7 @@
                 <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4">
                     <span class="text-[10px] font-extrabold uppercase tracking-widest text-blue-400 block mb-1.5"><i class="fa-solid fa-video mr-1"></i> Interactive Seminar Credentials</span>
                     <div class="space-y-1.5 text-xs text-slate-300 font-mono">
-                        <p class="flex items-center gap-2"><strong class="text-slate-500">Date & Time:</strong> Monday, 8 June 2026 @ 2:00 PM</p>
+                        <p class="flex items-center gap-2"><strong class="text-slate-500">Date & Time:</strong> Sunday, 7 June 2026 @ 11:00 AM</p>
                         <p class="flex items-center gap-2"><strong class="text-slate-500">Classroom:</strong> Virtual Zoom Online Masterclass</p>
                         <p class="flex items-center gap-2"><strong class="text-slate-500">Access Key:</strong> Dispatched inside WhatsApp Hub</p>
                     </div>
@@ -430,7 +429,7 @@
                         <option value="4">4th Year Only</option>
                     </select>
                 </div>
-                <button onclick="downloadRegistrationsCSV()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 border border-emerald-500/30">
+                <button onclick="downloadRegistrationsCSV()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2 border border-emerald-500/30 font-mono">
                     <i class="fa-solid fa-file-csv text-base"></i> Export Data to CSV
                 </button>
             </div>
@@ -492,6 +491,9 @@
 
     <!-- Scripting Engines -->
     <script>
+        // Set your live deployed Google Apps Script URL here!
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxrKu6piDQAiNTbFGMk1EBcOlq_XkEndSS88dwhNXzMYIx8fx_aqM3esxd8THV_29ah/exec';
+
         let cyberAudioCtx = null;
         function playCyberSound(style) {
             try {
@@ -811,14 +813,15 @@
             event.preventDefault();
             playCyberSound('click');
 
-            const name = document.getElementById('fullname').value;
-            const wa = document.getElementById('whatsapp').value;
-            const mail = document.getElementById('email').value;
-            const college = document.getElementById('college').value;
+            const formElement = event.target;
+            const name = document.getElementById('fullname').value.trim();
+            const wa = document.getElementById('whatsapp').value.trim();
+            const mail = document.getElementById('email').value.trim();
+            const college = document.getElementById('college').value.trim();
             const year = document.getElementById('academic-year').value;
             const skill = document.getElementById('coding-level').value;
             const track = document.getElementById('registration-type').value;
-            const fear = document.getElementById('student-fear').value;
+            const fear = document.getElementById('student-fear').value.trim();
 
             const pattern = /^[6-9]\d{9}$/;
             if (!pattern.test(wa)) {
@@ -826,9 +829,25 @@
                 return;
             }
 
-            // Save payload details safely
+            // Save payload details safely (both Firebase and local storage fallback)
             const record = { name, whatsapp: wa, email: mail, college, year, skill, track, fear };
             await window.saveRegistration(record);
+
+            // POST securely to your Live Google Sheet Database
+            if (GOOGLE_SCRIPT_URL) {
+                try {
+                    const formData = new FormData(formElement);
+                    fetch(GOOGLE_SCRIPT_URL, {
+                        method: 'POST',
+                        body: formData,
+                        mode: 'no-cors' // Prevent any cross-origin blocks
+                    })
+                    .then(() => console.log("🚀 Data securely bridged to Google Sheets."))
+                    .catch(err => console.error("Sheets bridging error:", err));
+                } catch (err) {
+                    console.error("Sheets transmission structure failed:", err);
+                }
+            }
 
             playCyberSound('success');
 
